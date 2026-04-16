@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aman Bersama SD N 3 Kepakisan</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root { 
+            --p: #4a90e2; 
+            --d: #ff5e57; 
+            --s: #1dd1a1; 
+            --w: #feca57; 
+            --dark: #2f3542; 
+            --bg-gradien: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: var(--bg-gradien); 
+            margin: 0; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        /* --- TAMPILAN LOGIN MENARIK --- */
+        .login-box { 
+            width: 100%;
+            max-width: 380px; 
+            background: rgba(255, 255, 255, 0.95); 
+            padding: 40px; 
+            border-radius: 25px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2); 
+            text-align: center;
+            backdrop-filter: blur(10px);
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        /* --- TAMPILAN DASHBOARD --- */
+        .dashboard-box { 
+            display: none; /* Awalnya sembunyi */
+            width: 95%;
+            max-width: 900px; 
+            background: #f8f9fa; 
+            padding: 25px; 
+            border-radius: 20px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin: 20px;
+        }
+
+        .sec { display: none; } 
+        .active { display: block; }
+
+        h2 { color: var(--dark); margin-bottom: 5px; }
+        .sub-title { color: #666; font-size: 14px; margin-bottom: 25px; }
+
+        input, textarea, select { 
+            width: 100%; padding: 14px; margin: 10px 0; 
+            border: 2px solid #eee; border-radius: 12px; box-sizing: border-box; 
+            transition: 0.3s; font-size: 15px;
+        }
+        input:focus { border-color: var(--p); outline: none; }
+
+        button { 
+            cursor: pointer; border-radius: 12px; font-weight: bold; border: none; 
+            padding: 14px 20px; transition: 0.3s; 
+        }
+        .btn-main { background: var(--p); color: white; width: 100%; font-size: 16px; margin-top: 10px; }
+        .btn-main:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(74,144,226,0.4); }
+        
+        .btn-out { background: var(--dark); color: white; float: right; padding: 6px 15px; font-size: 11px; }
+        .btn-pdf { background: #27ae60; color: white; margin: 10px 0; width: 100%; }
+
+        /* Storybook */
+        .storybook { background: #fffdf0; border: 2px dashed var(--w); border-radius: 15px; padding: 15px; text-align: center; margin-bottom: 20px; }
+        .sp { display: none; } .sp.active { display: block; }
+
+        /* Tabel */
+        .table-container { background: white; border-radius: 15px; padding: 10px; overflow-x: auto; margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
+        th { background: #f1f2f6; color: var(--p); }
+
+        .img-t { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; cursor: pointer; }
+        .badge { padding: 4px 10px; border-radius: 15px; color: white; font-size: 10px; font-weight: bold; }
+        .waiting { background: var(--w); color: #333; } 
+        .process { background: var(--p); } 
+        .done { background: var(--s); }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loginPage" class="login-box">
+        <div style="font-size: 50px; margin-bottom: 10px;">🛡️</div>
+        <h2>SD N 3 Kepakisan</h2>
+        <p class="sub-title">Portal Pelaporan Aman Bersama</p>
+        
+        <input type="text" id="userInput" placeholder="👤 Nama Lengkap">
+        <input type="text" id="nisInput" placeholder="🔑 NIS (Guru: 000)">
+        
+        <button onclick="doLogin()" class="btn-main">Masuk Sekarang</button>
+        <p id="errorMsg" style="color:red; display:none; font-size:12px; margin-top:10px;">⚠️ Data tidak ditemukan!</p>
+    </div>
+
+    <div id="dashPage" class="dashboard-box">
+        <button onclick="doLogout()" class="btn-out">Logout</button>
+        <h3 id="hiUser" style="color: var(--p); margin-top: 0;">Halo</h3>
+
+        <div id="adminView" style="display:none;">
+            <div style="max-width: 300px; margin: auto;"><canvas id="myChart"></canvas></div>
+            <button class="btn-pdf" onclick="pdf()">📄 Cetak Laporan PDF</button>
+        </div>
+
+        <div id="userView">
+            <div class="storybook">
+                <div id="st1" class="sp active"><h4>Bab 1: Verbal</h4><p>Gunakan kata-kata yang baik kepada teman.</p></div>
+                <div id="st2" class="sp"><h4>Bab 2: Fisik</h4><p>Jangan memukul atau menyakiti fisik teman.</p></div>
+                <div id="st3" class="sp"><h4>Bab 3: Sosial</h4><p>Ajak teman yang sendirian untuk bermain.</p></div>
+                <div id="st4" class="sp"><h4>Bab 4: Cyber</h4><p>Jangan mengejek teman di media sosial.</p></div>
+                <button onclick="move(-1)" style="padding:5px 10px;">⬅️</button> 
+                <button onclick="move(1)" style="padding:5px 10px;">➡️</button>
+            </div>
+            <form id="fLapor" style="background:#fff0f0; padding:20px; border-radius:15px; border: 1px solid #ffcccc;">
+                <h4 style="margin:0 0 10px 0; color:var(--d)">📝 Buat Laporan</h4>
+                <select id="typeInp" required>
+                    <option value="Verbal">Verbal (Ejekan)</option>
+                    <option value="Fisik">Fisik (Pukulan)</option>
+                    <option value="Sosial">Sosial (Dikucilkan)</option>
+                    <option value="Cyber">Cyber (Pesan HP)</option>
+                </select>
+                <input type="text" id="targetInp" placeholder="Nama Pelaku" required>
+                <textarea id="descInp" placeholder="Ceritakan kejadiannya..." required rows="3"></textarea>
+                <label style="font-size:11px;">Bukti Foto (Jika ada):</label>
+                <input type="file" id="imgInp" accept="image/*">
+                <button type="submit" style="background:var(--d); color:white; width:100%; margin-top:10px;">KIRIM ADUAN</button>
+            </form>
+        </div>
+
+        <h3 style="margin-top:30px;">📊 Riwayat Laporan</h3>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr><th>Pelapor</th><th>Pelaku</th><th>Detail</th><th>Bukti</th><th>Status</th><th id="thAksi" style="display:none;">Aksi</th></tr>
+                </thead>
+                <tbody id="listData"></tbody>
+            </table>
+        </div>
+    </div>
+
+<script>
+    // --- TAMBAHKAN NAMA ANAK DI SINI ---
+    const USERS = [
+        {n:"Guru", s:"000", r:"admin"},
+        {n:"Budi", s:"101", r:"user"},
+        {n:"Siti", s:"102", r:"user"}
+    ];
+
+    const DB_KEY = 'SDN3_FINAL_DATABASE';
+    let myChart = null; 
+    let step = 1;
+
+    function doLogin() {
+        const name = document.getElementById('userInput').value.toLowerCase();
+        const nis = document.getElementById('nisInput').value;
+        const user = USERS.find(x => x.n.toLowerCase() === name && x.s === nis);
+        
+        if(user) {
+            localStorage.setItem('auth', JSON.stringify(user));
+            checkSession();
+        } else {
+            document.getElementById('errorMsg').style.display = 'block';
+        }
+    }
+
+    function checkSession() {
+        const auth = JSON.parse(localStorage.getItem('auth'));
+        if(!auth) return;
+
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('dashPage').style.display = 'block';
+        document.body.style.background = "#f0f2f5"; // Ganti background saat masuk
+        document.body.style.display = "block"; 
+        document.getElementById('hiUser').innerText = "Halo, " + auth.n;
+        
+        if(auth.r === 'admin') {
+            document.getElementById('adminView').style.display='block';
+            document.getElementById('userView').style.display='none';
+            document.getElementById('thAksi').style.display='table-cell';
+        }
+        renderTable();
+    }
+
+    document.getElementById('fLapor').onsubmit = function(e) {
+        e.preventDefault();
+        const file = document.getElementById('imgInp').files[0];
+        if(file) {
+            const reader = new FileReader(); reader.readAsDataURL(file);
+            reader.onload = () => saveReport(reader.result);
+        } else { saveReport(""); }
+    };
+
+    function saveReport(pic) {
+        const auth = JSON.parse(localStorage.getItem('auth'));
+        const db = JSON.parse(localStorage.getItem(DB_KEY)) || [];
+        db.push({
+            id: Date.now(), 
+            by: auth.n, 
+            nis: auth.s, 
+            target: document.getElementById('targetInp').value, 
+            type: document.getElementById('typeInp').value, 
+            text: document.getElementById('descInp').value, 
+            pic: pic, 
+            status: 'Menunggu'
+        });
+        localStorage.setItem(DB_KEY, JSON.stringify(db));
+        alert("Laporan Terkirim!"); 
+        document.getElementById('fLapor').reset(); 
+        renderTable();
+    }
+
+    function renderTable() {
+        const auth = JSON.parse(localStorage.getItem('auth'));
+        const db = JSON.parse(localStorage.getItem(DB_KEY)) || [];
+        const tbody = document.getElementById('listData');
+        tbody.innerHTML = "";
+        
+        db.forEach(item => {
+            if(auth.r === 'admin' || item.nis === auth.s) {
+                const bClass = item.status === 'Selesai' ? 'done' : (item.status === 'Proses' ? 'process' : 'waiting');
+                const photo = item.pic ? `<img src="${item.pic}" class="img-t" onclick="window.open(this.src)">` : "-";
+                let actionBtn = auth.r === 'admin' ? `<td><button onclick="changeStatus(${item.id})" style="font-size:10px; padding:5px;">UPDATE</button></td>` : "";
+                
+                tbody.innerHTML += `<tr>
+                    <td>${item.by}</td>
+                    <td><b>${item.target}</b></td>
+                    <td>[${item.type}] ${item.text}</td>
+                    <td>${photo}</td>
+                    <td><span class="badge ${bClass}">${item.status}</span></td>
+                    ${actionBtn}
+                </tr>`;
+            }
+        });
+        if(auth.r === 'admin') updateChart();
+    }
+
+    function changeStatus(id) {
+        let db = JSON.parse(localStorage.getItem(DB_KEY));
+        const idx = db.findIndex(x => x.id === id);
+        db[idx].status = db[idx].status === 'Menunggu' ? 'Proses' : 'Selesai';
+        localStorage.setItem(DB_KEY, JSON.stringify(db)); 
+        renderTable();
+    }
+
+    function updateChart() {
+        const db = JSON.parse(localStorage.getItem(DB_KEY)) || [];
+        const data = {Verbal:0, Fisik:0, Sosial:0, Cyber:0};
+        db.forEach(x => data[x.type]++);
+        
+        const ctx = document.getElementById('myChart').getContext('2d');
+        if(myChart) myChart.destroy();
+        myChart = new Chart(ctx, {
+            type:'pie', 
+            data:{
+                labels:Object.keys(data), 
+                datasets:[{data:Object.values(data), backgroundColor:['#feca57','#ff5e57','#4a90e2','#2f3542']}]
+            }
+        });
+    }
+
+    function pdf() {
+        const { jsPDF } = window.jspdf; const doc = new jsPDF();
+        const db = JSON.parse(localStorage.getItem(DB_KEY)) || [];
+        doc.text("LAPORAN PENGADUAN BULLYING SDN 3 KEPAKISAN", 10, 10);
+        const rows = db.map(x => [x.by, x.target, x.type, x.status]);
+        doc.autoTable({head:[['Pelapor','Pelaku','Jenis','Status']], body:rows});
+        doc.save("Laporan_Sekolah.pdf");
+    }
+
+    function move(d) {
+        document.getElementById('st'+step).classList.remove('active');
+        step += d; if(step < 1) step = 4; if(step > 4) step = 1;
+        document.getElementById('st'+step).classList.add('active');
+    }
+
+    function doLogout() {
+        localStorage.removeItem('auth');
+        location.reload();
+    }
+
+    window.onload = checkSession;
+</script>
+</body>
+</html>
